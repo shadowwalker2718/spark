@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     # $example on$
     # Load documents (one per line).
-    documents = sc.textFile("data/mllib/kmeans_data.txt").map(lambda line: line.split(" "))
+    documents = sc.textFile("file:///opt/share/git.repo/spark.git/data/mllib/kmeans_data.txt").map(lambda line: line.split(" "))
 
     hashingTF = HashingTF()
     tf = hashingTF.transform(documents)
@@ -37,21 +37,47 @@ if __name__ == "__main__":
     tf.cache()
     idf = IDF().fit(tf)
     tfidf = idf.transform(tf)
+    print("tfidf:")
+    for each in tfidf.collect():
+        print(each)
 
     # spark.mllib's IDF implementation provides an option for ignoring terms
     # which occur in less than a minimum number of documents.
     # In such cases, the IDF for these terms is set to 0.
     # This feature can be used by passing the minDocFreq value to the IDF constructor.
-    idfIgnore = IDF(minDocFreq=2).fit(tf)
+    """
+    idfIgnore = IDF(minDocFreq=0).fit(tf)
     tfidfIgnore = idfIgnore.transform(tf)
     # $example off$
-
-    print("tfidf:")
-    for each in tfidf.collect():
-        print(each)
-
     print("tfidfIgnore:")
     for each in tfidfIgnore.collect():
         print(each)
-
+    """
     sc.stop()
+
+"""
+
+0.0 0.0 0.01
+0.1 0.1 0.11
+0.2 0.2 0.21
+9.0 9.0 9.01
+9.1 9.1 9.11
+9.2 9.2 9.21
+
+
+tfidf:
+(1048576,[1046921],[3.75828890549])
+(1048576,[1046920],[3.75828890549])
+(1048576,[1046923],[3.75828890549])
+(1048576,[892732],[3.75828890549])
+(1048576,[892733],[3.75828890549])
+(1048576,[892734],[3.75828890549])
+    
+tfidfIgnore:
+(1048576,[1046921],[0.0])
+(1048576,[1046920],[0.0])
+(1048576,[1046923],[0.0])
+(1048576,[892732],[0.0])
+(1048576,[892733],[0.0])
+(1048576,[892734],[0.0])
+"""

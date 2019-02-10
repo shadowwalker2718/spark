@@ -264,6 +264,9 @@ fi
 # Copy other things
 mkdir "$DISTDIR/conf"
 cp "$SPARK_HOME"/conf/*.template "$DISTDIR/conf"
+cp "$SPARK_HOME"/conf/*.sh "$DISTDIR/conf"
+cp "$SPARK_HOME"/conf/*.conf "$DISTDIR/conf"
+cp "$SPARK_HOME"/conf/*.xml "$DISTDIR/conf"
 cp "$SPARK_HOME/README.md" "$DISTDIR"
 cp -r "$SPARK_HOME/bin" "$DISTDIR"
 cp -r "$SPARK_HOME/python" "$DISTDIR"

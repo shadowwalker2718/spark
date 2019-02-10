@@ -125,10 +125,9 @@
     <yarn.version>${hadoop.version}</yarn.version>
     <zookeeper.version>3.4.6</zookeeper.version>
     <curator.version>2.7.1</curator.version>
-    <!--hive.group>org.spark-project.hive</hive.group-->
-    <hive.group>org.apache.hive</hive.group>
+    <hive.group>org.spark-project.hive</hive.group>
     <!-- Version used in Maven Hive dependency -->
-    <hive.version>3.1.1</hive.version>
+    <hive.version>1.2.1.spark2</hive.version>
     <!-- Version used for internal directory structure -->
     <hive.version.short>3.1.1</hive.version.short>
     <!-- note that this should be compatible with Kafka brokers version 0.10 and up -->

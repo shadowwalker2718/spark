@@ -186,13 +186,8 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
    * Return a runnable that performs the given operation on the event logs.
    * This operation is expected to be executed periodically.
    */
-  private def getRunner(operateFun: () => Unit): Runnable = {
-    new Runnable() {
-      override def run(): Unit = Utils.tryOrExit {
-        operateFun()
-      }
-    }
-  }
+  private def getRunner(operateFun: () => Unit): Runnable =
+    () => Utils.tryOrExit { operateFun() }
 
   /**
    * Fixed size thread pool to fetch and parse log files.
@@ -221,29 +216,25 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
     // Cannot probe anything while the FS is in safe mode, so spawn a new thread that will wait
     // for the FS to leave safe mode before enabling polling. This allows the main history server
     // UI to be shown (so that the user can see the HDFS status).
-    val initThread = new Thread(new Runnable() {
-      override def run(): Unit = {
-        try {
-          while (isFsInSafeMode()) {
-            logInfo("HDFS is still in safe mode. Waiting...")
-            val deadline = clock.getTimeMillis() +
-              TimeUnit.SECONDS.toMillis(SAFEMODE_CHECK_INTERVAL_S)
-            clock.waitTillTime(deadline)
-          }
-          startPolling()
-        } catch {
-          case _: InterruptedException =>
+    val initThread = new Thread(() => {
+      try {
+        while (isFsInSafeMode()) {
+          logInfo("HDFS is still in safe mode. Waiting...")
+          val deadline = clock.getTimeMillis() +
+            TimeUnit.SECONDS.toMillis(SAFEMODE_CHECK_INTERVAL_S)
+          clock.waitTillTime(deadline)
         }
+        startPolling()
+      } catch {
+        case _: InterruptedException =>
       }
     })
     initThread.setDaemon(true)
     initThread.setName(s"${getClass().getSimpleName()}-init")
     initThread.setUncaughtExceptionHandler(errorHandler.getOrElse(
-      new Thread.UncaughtExceptionHandler() {
-        override def uncaughtException(t: Thread, e: Throwable): Unit = {
-          logError("Error initializing FsHistoryProvider.", e)
-          System.exit(1)
-        }
+      (_: Thread, e: Throwable) => {
+        logError("Error initializing FsHistoryProvider.", e)
+        System.exit(1)
       }))
     initThread.start()
     initThread
@@ -517,9 +508,8 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
 
       val tasks = updated.flatMap { entry =>
         try {
-          val task: Future[Unit] = replayExecutor.submit(new Runnable {
-            override def run(): Unit = mergeApplicationListing(entry, newLastScanTime, true)
-          }, Unit)
+          val task: Future[Unit] = replayExecutor.submit(
+            () => mergeApplicationListing(entry, newLastScanTime, true))
           Some(task -> entry.getPath)
         } catch {
           // let the iteration over the updated entries break, since an exception on
@@ -546,6 +536,9 @@ private[history] class FsHistoryProvider(conf: SparkConf, clock: Clock)
             // We don't have read permissions on the log file
             logWarning(s"Unable to read log $path", e.getCause)
             blacklist(path)
+            // SPARK-28157 We should remove this blacklisted entry from the KVStore
+            // to handle permission-only changes with the same file sizes later.
+            listing.delete(classOf[LogInfo], path.toString)
           case e: Exception =>
             logError("Exception while merging application listings", e)
         } finally {

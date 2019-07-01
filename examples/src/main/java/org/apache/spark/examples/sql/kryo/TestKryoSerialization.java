@@ -1,20 +1,17 @@
-package org.apache.spark.examples.sql.Kryo;
+package org.apache.spark.examples.sql.kryo;
 
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.*;
 import org.apache.spark.api.java.*;
 import java.util.*;
-import java.io.Serializable;
 
 public class TestKryoSerialization {
     public static void main(String[] args) {
         final SparkSession ss = SparkSession.builder().appName("demo")
                 .master("local")
                 .config("spark.serializer","org.apache.spark.serializer.KryoSerializer")
-                .config("spark.kryo.registrator","org.apache.spark.examples.sql.Kryo.CustomizedKryoRegistrator")
+                .config("spark.kryo.registrator","org.apache.spark.examples.sql.kryo.CustomizedKryoRegistrator")
                 .enableHiveSupport().getOrCreate();
 
         ss.sparkContext().setLogLevel("ERROR");
@@ -32,6 +29,9 @@ public class TestKryoSerialization {
         final JavaRDD<SampleBean> rdd = ds.javaRDD();
         final List<SampleBean> r = rdd.collect();
         System.out.println(r.size()==1);
+        try {
+            Thread.sleep(90000);
+        }catch (Exception e){}
         ss.close();
     }
 }

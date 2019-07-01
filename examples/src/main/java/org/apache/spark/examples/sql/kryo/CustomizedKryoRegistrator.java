@@ -1,4 +1,4 @@
-package org.apache.spark.examples.sql.Kryo;
+package org.apache.spark.examples.sql.kryo;
 
 import java.io.Serializable;
 
